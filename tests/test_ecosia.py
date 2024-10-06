@@ -12,7 +12,6 @@ from selenium_webdriver.conditions import that
 browser.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
 browser.wait = WebDriverWait(browser.driver, timeout=2, ignored_exceptions=WebDriverException)
 
-
 browser.open('https://ecosia.org')
 
 '''
