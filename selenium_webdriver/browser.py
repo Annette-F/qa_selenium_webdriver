@@ -1,52 +1,88 @@
+from __future__ import annotations
+from selenium.common import WebDriverException
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
+from selenium_webdriver.conditions import that
 from selenium_webdriver.selector import to_locator
 from selenium_webdriver.wait import WebDriverWait
-
-driver: WebDriver = ...
-wait: WebDriverWait = ...
+from dataclasses import dataclass
 
 
-def assert_(condition):
-    return wait.until(condition)
+@dataclass
+class Config:
+    timeout: float = 2
+    base_url: str = ''
 
 
-def open(url):
-    driver.get(url)
+class Element:
+    def __init__(self, selector, browser: Browser):
+        self.selector = selector
+        self.browser = browser
+        return self
+
+    def type(self, value):
+        self.browser.type(self.selector, value)
+        return self
+
+    def click(self):
+        self.browser.click(self.selector)
+        return self
 
 
-def back():
-    driver.back()
+class Collection:
+    def __init__(self, selector, browser: Browser):
+        self.selector = selector
+        self.browser = browser
+        return self
+
+    def assert_amount(self, value):
+        self.browser.assert_(that.number_of_elements(self.selector, value=value))
+        return self
 
 
-def quit():
-    driver.quit()
+class Browser:
+    def __init__(self, driver: WebDriver, config=Config()):
+        self.driver = driver
+        self.config = config
+        self.wait = WebDriverWait(driver, timeout=config.timeout, ignored_exceptions=WebDriverException)
+        return self
 
+    def assert_(self, condition):
+        return self.wait.until(condition)
 
-def element(selector):
-    def find_visible(driver: WebDriver):
-        webelement = driver.find_element(*to_locator(selector))
-        if not webelement.is_displayed():
-            raise AssertionError(f'element is not displayed: {webelement.get_attribute("outerHTML")}')
-        return webelement
+    def open(self, relative_url):
+        self.driver.get(self.config.base_url + relative_url)
+        return self
 
-    return wait.until(find_visible, message=f'element by {selector} is not ready')
+    def back(self):
+        self.driver.back()
+        return self
 
+    def quit(self):
+        self.driver.quit()
+        return self
 
-def type(selector, value):
-    def command(driver: WebDriver) -> WebElement:
-        webelement = driver.find_element(*to_locator(selector))
-        webelement.send_keys(value)
-        return webelement
+    def type(self, selector, value):
+        def command(driver: WebDriver) -> WebElement:
+            webelement = driver.find_element(*to_locator(selector))
+            webelement.send_keys(value)
+            return webelement
 
-    return wait.until(command, message=f'failed to type «{value}» into element by {selector}')
+        self.wait.until(command, message=f'failed to type «{value}» into element by {selector}')
+        return self.element(selector)
 
+    def click(self, selector):
+        def command(driver: WebDriver) -> WebElement:
+            webelement = driver.find_element(*to_locator(selector))
+            webelement.click()
+            return webelement
 
-def click(selector):
-    def command(driver: WebDriver) -> WebElement:
-        webelement = driver.find_element(*to_locator(selector))
-        webelement.click()
-        return webelement
+        self.wait.until(command, message=f'failed to click on element by {selector}')
+        return self.element(selector)
 
-    return wait.until(command, message=f'failed to click on element by {selector}')
+    def element(self, selector) -> Element:
+        return Element(selector, self)
+
+    def all(self, selector) -> Collection:
+        return Collection(selector, self)
