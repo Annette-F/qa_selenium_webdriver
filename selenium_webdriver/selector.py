@@ -1,5 +1,4 @@
 from typing import Tuple
-
 from selenium.webdriver.common.by import By
 
 

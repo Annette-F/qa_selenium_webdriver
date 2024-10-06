@@ -52,7 +52,7 @@ type(query, value=' github issues' + Keys.ENTER)
 # click('[data-test-id=mainline-result-web]:nth-of-type(1) a').click()
 click('[data-test-id=mainline-result-web]:nth-of-type(1) a')
 
-# assert_that(number_of_elements('[id^=issue_]:not([id$=_link]', value=4))
+# assert_that(number_of_elements('[id^=issue_]:not([id$=_link]', value=24))
 assert_that(number_of_elements('[id^=issue_]:not([id$=_link]', value=24))
 
 '''
